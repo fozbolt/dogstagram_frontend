@@ -102,9 +102,15 @@ let Posts = {
         async addComment(postId, comment) {
             await Service.post(`/posts/${postId}/comments/`, comment);
         },
-        //mozda mozemo ovo zvati i za changereply? vj radi isto!
         async addReply(postId, comment, commentId) {
             await Service.patch(`/posts/${postId}/comments/${commentId}`, comment);
+        },
+        async changeComment(postId, comment, commentId) {
+            //quickfix zbog dvije identicne rute je na backendu
+            await Service.patch(`/posts/${postId}/comments/${commentId}`, comment);
+        },
+        async changeReply(postId, comment, commentId, replyId) {
+            await Service.patch(`/posts/${postId}/comments/${commentId}/replies/${replyId}`, comment);
         },
         async deleteComment(postId, commentId) {
             await Service.delete(`/posts/${postId}/comments/${commentId}`);
