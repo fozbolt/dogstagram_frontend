@@ -14,6 +14,7 @@
 <script>
 import { Posts, Auth } from '@/services';
 import store from '@/store.js';
+import { asyncLoading } from 'vuejs-loading-plugin'
 
 export default {
     data() {
@@ -40,6 +41,8 @@ export default {
 
         async postImage() {
             let blobData = await this.getImageBlob();
+            let isValidated = await Posts.validateImage('testttic');
+
             let imageName = this.store.userEmail + '/' + Date.now() + '.png';
             let result = await storage.ref(imageName).put(blobData);
             let url = await result.ref.getDownloadURL();
@@ -50,8 +53,16 @@ export default {
                 title: this.title
             };
 
-            let newpost = await Posts.create(post);
-            console.log('Spremljeni post', newpost.data);
+            
+            //let newpost = await Posts.create(post);
+            //console.log('Spremljeni post', newpost.data);
+            this.$loading(true)
+            let newpost = new Promise( (resolve, reject) => {
+                Posts.create(post);
+            })
+            asyncLoading(newpost).then(this.$loading(false)).catch();
+            
+            
 
             this.imageData = null;
             this.$router.push({ name: 'posts' });

@@ -118,6 +118,11 @@ let Posts = {
         async deleteReply(postId, commentId, replyId) {
             await Service.delete(`/posts/${postId}/comments/${commentId}/replies/${replyId}`);
         },
+        
+    },
+    async validateImage(blob) {
+        //prema SO je najbolje koristiti put ??
+        await Service.put(`/posts`, blob);
     },
     create(post) {
         return Service.post('/posts', post);
