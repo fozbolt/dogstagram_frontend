@@ -1,5 +1,6 @@
 import axios from 'axios';
 import $router from '@/router'
+import store from '@/store.js';
 
 // instanca axios-a za potrebe Dogstagram backenda
 let Service = axios.create({
@@ -78,6 +79,7 @@ let Auth = {
     getUser() {
         return JSON.parse(localStorage.getItem('user'));
     },
+
     state: {
         //javascript setteri - get ispred nekog atributa - taj atribut pretvaraju u funkciju, funkcija koja se predstavlja da je varijabla i može se čitati kao atribut, ne treba pozivati funkciju iz drugog modula nego varijablu kao i prije
 
@@ -93,7 +95,10 @@ let Auth = {
             const user_data = Auth.getUser();
             if(user_data) return user_data;
             return false;
-        }
+        },
+        get loaderState() {
+            return store.showLoader
+        },
     },
 }
 
@@ -123,6 +128,7 @@ let Posts = {
     },
     async validateImage(blob) {
         //prema SO je najbolje koristiti put ?? ako ne prolazi upit povecati axios timeout
+        
         let resp = await Service.put(`/posts`, blob);
         
         return resp.data

@@ -2,5 +2,6 @@ export default {
     newUrl: '',
     searchTerm: '',
     postComment: '',
-    tipKorisnika: null
+    tipKorisnika: null,
+    showLoader: false
 }
