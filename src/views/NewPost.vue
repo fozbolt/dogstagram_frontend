@@ -7,14 +7,21 @@
             <input v-model="title" type="text" class="form-control" />
         </div>
         <croppa :width="400" :height="400" v-model="imageData"></croppa>
+        <div class="alert alert-warning" style="max-width:400px; padding:0; text-align:center; display:none;">
+            <strong>Note:</strong> 
+                Please upload photo of your dog or cat
+        </div>
         <button type="submit" class="btn btn-primary ml-2">Post image</button>
+        
     </form>
+    
 </template>
 
 <script>
 import { Posts, Auth } from '@/services';
 import store from '@/store.js';
 import { asyncLoading } from 'vuejs-loading-plugin'
+import $ from 'jquery'
 
 export default {
     data() {
@@ -42,32 +49,38 @@ export default {
         async postImage() {
             let blobData = await this.getImageBlob();
             let isValidated = await Posts.validateImage('testttic');
+            console.log('u newpostu', isValidated)
 
-            let imageName = this.store.userEmail + '/' + Date.now() + '.png';
-            let result = await storage.ref(imageName).put(blobData);
-            let url = await result.ref.getDownloadURL();
-            let post = {
-                createdBy: Auth.getUser().username,
-                postedAt: Date.now(),
-                source: url,
-                title: this.title
-            };
+            if (isValidated){
+                let imageName = this.store.userEmail + '/' + Date.now() + '.png';
+                let result = await storage.ref(imageName).put(blobData);
+                let url = await result.ref.getDownloadURL();
+                let post = {
+                    createdBy: Auth.getUser().username,
+                    postedAt: Date.now(),
+                    source: url,
+                    title: this.title
+                };
 
-            
-            //let newpost = await Posts.create(post);
-            //console.log('Spremljeni post', newpost.data);
-            this.$loading(true)
-            let newpost = new Promise( (resolve, reject) => {
-                Posts.create(post);
-            })
-            asyncLoading(newpost).then(this.$loading(false)).catch();
-            
-            
+                //let newpost = await Posts.create(post);
+                //console.log('Spremljeni post', newpost.data);
 
-            this.imageData = null;
-            this.$router.push({ name: 'posts' });
+                this.$loading(true)
+                let newpost = new Promise( (resolve, reject) => {
+                    Posts.create(post);
+                })
+                asyncLoading(newpost).then(this.$loading(false)).catch();
+                
+
+                this.imageData = null;
+                this.$router.push({ name: 'posts' });
+                }   
+
+                else{
+                    $('.alert').fadeIn();
+                    console.log('Please upload dog or cat picture')
+                }
         },
-    
     }
 };
 </script>

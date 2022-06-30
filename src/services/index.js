@@ -4,7 +4,7 @@ import $router from '@/router'
 // instanca axios-a za potrebe Dogstagram backenda
 let Service = axios.create({
     baseURL: 'http://localhost:3000/',
-    timeout: 10000,
+    timeout: 100000,
 });
 
 
@@ -24,6 +24,7 @@ Service.interceptors.response.use(
     (response) => {return response},
     (error) => {
         if (error.response.status == 401) {
+            console.log('ka sam stvarno tu')
             if($router.app.$route.name != "Login") $router.push({ path: '/Login'})
             Auth.logout();
         }
@@ -121,8 +122,10 @@ let Posts = {
         
     },
     async validateImage(blob) {
-        //prema SO je najbolje koristiti put ??
-        await Service.put(`/posts`, blob);
+        //prema SO je najbolje koristiti put ?? ako ne prolazi upit povecati axios timeout
+        let resp = await Service.put(`/posts`, blob);
+        
+        return resp.data
     },
     create(post) {
         return Service.post('/posts', post);
