@@ -5,7 +5,7 @@ import store from '@/store.js';
 // instanca axios-a za potrebe Dogstagram backenda
 let Service = axios.create({
     baseURL: 'http://localhost:3000/',
-    timeout: 100000,
+    timeout: 1000000, //zbog spore obrade validacije slike
 });
 
 
