@@ -126,11 +126,10 @@ let Posts = {
         },
         
     },
-    async validateImage(blob) {
+    async validateImage(base64_img) {
         //prema SO je najbolje koristiti put ?? ako ne prolazi upit povecati axios timeout
-        
-        let resp = await Service.put(`/posts`, blob);
-        
+        let resp = await Service.put(`/posts`, {img: base64_img});
+
         return resp.data
     },
     create(post) {

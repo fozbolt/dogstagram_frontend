@@ -52,12 +52,23 @@ export default {
             });
         },
 
+
+        blobToBase64(blob) {
+        return new Promise((resolve, _) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+        },
+
         async postImage() {
             let blobData = await this.getImageBlob();
 
             //this.$loading(true) // ukljuciti ovo za loder br 2. (kroz cijeli ekran)
             this.store.showLoader = true;
-            let isValidated = await Posts.validateImage('testttic');
+
+            let base64_img = await this.blobToBase64(blobData)
+            let isValidated = await Posts.validateImage(base64_img);
         
             if (isValidated){
                 let imageName = this.store.userEmail + '/' + Date.now() + '.png';
@@ -79,7 +90,7 @@ export default {
                 })
                 asyncLoading(newpost).then(this.$loading(false)).catch(); //for loader v2
                 
-
+                this.imageData = null;
                 this.$router.push({ name: 'posts' });
                 }   
 
@@ -90,7 +101,7 @@ export default {
                 }
 
                 this.store.showLoader = false;
-                this.imageData = null;
+                
         },
     }
 };
