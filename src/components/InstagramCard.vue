@@ -25,17 +25,25 @@
                         style="padding: 15px 0 0 0; margin-top: 5px; border:none;"
                     ><div style="padding: 0px 15px 15px 15px">
                         <div class="d-flex w-100 justify-content-between">
-                            <small style="width:60%;">{{ formatTime(c.posted_at) }} by {{ c.username }}</small>  
+                            <small style="width:60%;">{{ formatTime(c.posted_at) }} by <b> {{ c.username }}</b></small>  
 
-                                <small v-if="isReplyCommentOpen==false"> <a @click="openReply(c.id)" style="margin-left:30px">Reply</a></small>
-                                <small v-if="!isReplyCommentOpen==='' || isReplyCommentOpen===true"> <a @click="openReply(c.id)" style="margin-left:10px">Close reply</a></small>
+                                <small v-if="isReplyCommentOpen==false"> 
+                                    <a @click="openReply(c.id)" style="margin-left:30px">Reply</a>
+                                </small>
+                                <small v-if="isReplyCommentOpen===true && c.id === commentId">
+                                    <a @click="openReply(c.id)" style="margin-left:10px">Close reply</a>
+                                </small>
 
-                                <small v-if="isEditCommentOpen==false && auth.user_data.username === c.username"> <a @click="openEdit(c.id, c.comment)" style="margin-left:30px">Edit</a></small>
-                                <small v-if="!isEditCommentOpen==='' || isEditCommentOpen===true && auth.user_data.username === c.username"> <a @click="openEdit(c.id)" style="margin-left:10px">Close Edit</a></small>  
+                                <small v-if="isEditCommentOpen==false && auth.user_data.username === c.username">
+                                    <a @click="openEdit(c.id, c.comment)" style="margin-left:30px">Edit</a>
+                                </small>
+                                <small v-if="isEditCommentOpen===true && auth.user_data.username === c.username && editId===c.id">
+                                    <a @click="openEdit(c.id)" style="margin-left:10px">Close Edit</a>
+                                </small>  
                     
                             <small v-if="auth.user_data.username === c.username"> <a @click="removeComment(c.id)" href="#" style="margin-left:30px">Delete</a></small>
                         </div>
-                        <span v-if="!isEditCommentOpen">{{ c.comment }}</span>
+                        <span v-if="!isEditCommentOpen || c.id!==editId">{{ c.comment }}</span>
                         <!--open form if clicked on edit-->
                         <form v-if="isEditCommentOpen && c.id===editId" @submit.prevent="changeComment('main', c.id)" class="form-inline mb-0">
                                     <div class="inputDiv repliesDiv">                               
@@ -56,17 +64,23 @@
                             <div v-for="reply in c.replies"  class="replyLoop">
                                 <div  class="repliesDiv" >
                                     <div class="d-flex w-100 justify-content-between"  >
-                                        <small style="width:60%;" > Replied {{ formatTime(reply.posted_at) }} by {{ reply.username }}</small>
+                                        <small style="width:60%;" > Replied {{ formatTime(reply.posted_at) }} by <b> {{ reply.username }}</b> </small>
                                         
-                                        <small v-if="isEditReplyOpen==false && auth.user_data.username === reply.username"> <a @click="openEditReply(reply._id)" style="margin-left:30px">Edit</a></small>
-                                        <small v-if="!isEditReplyOpen==='' || isEditReplyOpen===true && auth.user_data.username === reply.username"> <a @click="openEditReply(reply._id)" style="margin-left:10px">Close Edit</a></small>      
+                                        <small v-if="isEditReplyOpen==false && auth.user_data.username === reply.username">
+                                            <a @click="openEditReply(reply._id, reply.comment)" style="margin-left:30px">Edit</a>
+                                        </small>
+                                        <small v-if="isEditReplyOpen===true && auth.user_data.username === reply.username  && editReplyId===reply._id">
+                                            <a @click="openEditReply(reply._idt)" style="margin-left:10px">Close Edit</a>
+                                        </small>      
                                         
-                                        <small v-if="auth.user_data.username === reply.username"> <a @click="removeReply(reply._id, reply._id)" href="#" style="margin-left:30px">Delete</a></small>
+                                        <small v-if="auth.user_data.username === reply.username">
+                                            <a @click="removeReply(c.id, reply._id)" href="#" style="margin-left:30px">Delete</a>
+                                        </small>
                                     </div>
                                 
-                                    <span v-if="!isEditReplyOpen"> {{ reply.comment }}</span>
+                                    <span v-if="!isEditReplyOpen || reply._id!==editReplyId"> {{ reply.comment }}</span>
                                         <!--open form if clicked on edit-->
-                                    <form v-if="isEditReplyOpen && reply._id===editReplyId" @submit.prevent="changeComment('reply', reply._id)" class="form-inline mb-0">
+                                    <form v-if="isEditReplyOpen && reply._id===editReplyId" @submit.prevent="changeComment('reply', c.id, reply._id)" class="form-inline mb-0">
                                         <div class="inputDiv repliesDiv">                               
                                             <input style="width:100%;"
                                                     v-model="editReply"
@@ -132,13 +146,13 @@ export default {
             auth: Auth.state,
             newComment: '',
             replyComment: '',
-            isReplyCommentOpen:'',
+            isReplyCommentOpen:false,
             replies:'',
             commentId: '',
-            isEditCommentOpen: '',
+            isEditCommentOpen: false,
             editComment:'',
             editId:'',
-            isEditReplyOpen: '',
+            isEditReplyOpen: false,
             editReply:'',
             editReplyId:'',
 
@@ -152,22 +166,26 @@ export default {
             this.info.comments = post.comments;
         },
         formatTime(t) {
-            return moment(t.posted_at).fromNow();
+            return moment(t).fromNow();
+        
+            //return moment(t).format("DD-MM-YYYY h:mm:ss");
         },
         async removeComment(commentId) {
             let postId = this.info.id;
+
             await Posts.Comments.deleteComment(postId, commentId);
             this.refresh();
         },
 
         async removeReply(commentId, replyId) {
             let postId = this.info.id;
+
             await Posts.Comments.deleteReply(postId, commentId, replyId);
             this.refresh();
         },
 
         //redundant code - needs refactoring
-        async postComment(type, id=undefined) {
+        async postComment(type, commentId=undefined) {
            
             if (this.newComment && type==='main') {
                 let postId = this.info.id;
@@ -195,7 +213,8 @@ export default {
                 };
 
                 try {
-                    await Posts.Comments.addReply(postId, comment, id);
+                    comment.type=type;
+                    await Posts.Comments.addReply(postId, comment, commentId);
                     this.refresh();
                 } catch (e) {
                     console.error('Greška prilikom snimanja komentara', e);
@@ -210,18 +229,19 @@ export default {
             if (this.isReplyCommentOpen===true) this.isReplyCommentOpen = false;
             else this.isReplyCommentOpen = true
                 
-            this.editReplyId=id
+            this.commentId=id
         },
 
-        async openEditReply(id){
+        async openEditReply(id, comment=''){
             if (this.isEditReplyOpen===true) this.isEditReplyOpen = false;
             else this.isEditReplyOpen = true
                 
             this.editReplyId=id
+            this.editReply= comment
         },
 
         //redundant
-        async openEdit(id, comment){
+        async openEdit(id, comment=''){
             if (this.isEditCommentOpen===true) this.isEditCommentOpen = false;
             else this.isEditCommentOpen = true
 
@@ -231,42 +251,41 @@ export default {
 
 
         // redundant code - needs refactoring
-        async changeComment(type, id=undefined) {
-           
-            if (this.newComment && type==='main') {
+        async changeComment(type, commentId, replyId=undefined,) {
+
+            if (this.editComment && type==='main') {
                 let postId = this.info.id;
                 let comment = {
-                    commentId: this.editComment,
+                    commentId: this.editId,
                     comment: this.editComment,
                 };
-
+    
                 try {
-                    await Posts.Comments.changeComment(postId, comment);
+                    //saljem u body-u comment id i u paramatru/queryu - ispraviti - za sad korisnim onaj iz body-a
+                    comment.type=type;
+                    await Posts.Comments.changeComment(postId, comment, commentId);
+                    this.isEditCommentOpen = false
                     this.refresh();
                 } catch (e) {
                     console.error('Greška prilikom snimanja komentara', e);
-                } finally {
-                    this.newComment = '';
-                }
+                } 
             }
 
-            else if (this.replyComment && type==='reply'){
-                console.log('tu')
+            else if (this.editReply && type==='reply'){
                 let postId = this.info.id;
                 let comment = {
                     username: this.auth.user_data.username,
-                    comment: this.replyComment,
+                    comment: this.editReply,
                 };
-
+            
                 try {
-                    await Posts.Comments.changeReply(postId, comment, id);
+                    //ista ruta kao za dodavanje replya
+                    await Posts.Comments.changeReply(postId, comment, commentId, replyId);
+                    this.isEditReplyOpen = false
                     this.refresh();
                 } catch (e) {
                     console.error('Greška prilikom snimanja komentara', e);
-                } finally {
-                    this.replyComment = '';
-                    this.isReplyCommentOpen = '';
-                }
+                } 
         
             }
 
@@ -274,7 +293,7 @@ export default {
             this.editComment=''
             this.editId= ''
             this.replyId=''
-            this.replyComment
+            this.replyComment=''
         },
         
     },
